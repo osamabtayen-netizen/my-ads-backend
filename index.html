@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مساعد الإعلانات الذكي</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    </style>
+</head>
+<body class="flex flex-col h-screen max-w-2xl mx-auto p-4 bg-slate-50">
+
+    <header class="bg-slate-800 text-slate-100 p-5 rounded-t-2xl shadow-xs text-center border-b border-slate-700">
+        <h1 class="text-xl font-bold tracking-wide">مساعد الإعلانات الذكي</h1>
+        <p class="text-xs text-slate-400 mt-1.5">نظام توليد الأفكار والوصف الإعلاني الآمن</p>
+    </header>
+
+    <main id="chat-container" class="flex-1 bg-white border-x border-b border-slate-200 p-5 overflow-y-auto space-y-4 shadow-xs flex flex-col">
+        <div class="bg-slate-100 text-slate-800 p-3.5 rounded-2xl text-sm max-w-[85%] self-start border border-slate-200 shadow-3xs leading-relaxed">
+            أهلاً بك! يمكنك الآن كتابة طلبك مباشرة، أو الضغط على أحد **الأزرار العامة** بالأسفل لتبدأ المنصة بمساعدتك فوراً.
+        </div>
+    </main>
+
+    <div class="mt-2 bg-white p-3 rounded-b-2xl border border-slate-200 shadow-xs space-y-3">
+        
+        <!-- قسم الأزرار العامة وغير المحصورة بمنتج معين -->
+        <div class="flex flex-wrap gap-2 pt-1">
+            <button onclick="quickPrompt('أريد أفكار إعلانية إبداعية ومبتكرة للتسويق لمنتج جديد، اسألني عن تفاصيل المنتج لنبدأ')" class="bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 px-3 py-1.5 rounded-xl text-xs font-medium transition-colors cursor-pointer">
+                💡 توليد أفكار إعلانية عامة
+            </button>
+            <button onclick="quickPrompt('ساعدني في كتابة وصف تسويقي جذاب ومقنع لمتجر إلكتروني، اطلب مني تفاصيل المتجر ونوع المنتجات لتصيغ لي النص')" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 px-3 py-1.5 rounded-xl text-xs font-medium transition-colors cursor-pointer">
+                🛍️ كتابة وصف تسويقي للمتاجر
+            </button>
+            <button onclick="quickPrompt('أريد استراتيجية دقيقة لتحديد وفحص الفئة المستهدفة والجمهور المهتم بالشراء لأي منتج أطلقه، كيف نبدأ؟')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 px-3 py-1.5 rounded-xl text-xs font-medium transition-colors cursor-pointer">
+                🎯 خطة تحديد الجمهور المستهدف
+            </button>
+        </div>
+
+        <footer class="flex gap-2">
+            <input type="text" id="user-input" placeholder="اكتب فكرة منتجك أو طلبك هنا..." class="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:border-slate-400 focus:bg-white text-sm transition-all">
+            <button id="send-btn" class="bg-slate-800 hover:bg-slate-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors cursor-pointer">
+                إرسال
+            </button>
+        </footer>
+    </div>
+
+    <script>
+        const chatContainer = document.getElementById('chat-container');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+        const BACKEND_URL = 'https://my-ads-api.onrender.com/api/chat';
+
+        // دالة تشغيل الأزرار السريعة
+        function quickPrompt(text) {
+            userInput.value = text;
+            sendMessage();
+        }
+
+        async function sendMessage() {
+            const messageText = userInput.value.trim();
+            if (!messageText) return;
+
+            appendMessage(messageText, 'user');
+            userInput.value = '';
+
+            const loadingId = appendMessage('جاري تحليل الطلب وتوليد النص الإعلاني...', 'bot', true);
+
+            try {
+                const response = await fetch(BACKEND_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: messageText })
+                });
+
+                const data = await response.json();
+                const replyText = data.reply || "حدث خطأ غير متوقع.";
+                updateMessage(loadingId, replyText);
+
+            } catch (error) {
+                console.error(error);
+                updateMessage(loadingId, 'حدث خطأ في الاتصال بالسيرفر المحلي. تأكد من أن الشاشة السوداء (CMD) شغالة والـ VPN نشط.');
+            }
+        }
+
+        function appendMessage(text, sender, isLoading = false) {
+            const msgDiv = document.createElement('div');
+            const id = 'msg-' + Date.now();
+            msgDiv.id = id;
+            
+            if (sender === 'user') {
+                msgDiv.className = 'bg-slate-600 text-white p-3.5 rounded-2xl text-sm max-w-[85%] self-end shadow-3xs ml-auto leading-relaxed';
+            } else {
+                msgDiv.className = 'bg-white text-slate-800 p-3.5 rounded-2xl text-sm max-w-[85%] self-start border border-slate-200 shadow-3xs leading-relaxed';
+                if (isLoading) msgDiv.classList.add('animate-pulse', 'text-slate-400');
+            }
+            
+            msgDiv.innerText = text;
+            chatContainer.appendChild(msgDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            return id;
+        }
+
+        function updateMessage(id, newText) {
+            const msgDiv = document.getElementById(id);
+            if (msgDiv && newText) {
+                let formattedText = String(newText)
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                    .replace(/\n/g, '<br>');
+
+                msgDiv.innerHTML = formattedText;
+                msgDiv.classList.remove('animate-pulse', 'text-slate-400');
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+        }
+
+        sendBtn.addEventListener('click', sendMessage);
+        userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+    </script>
+</body>
+</html>
